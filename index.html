@@ -50,6 +50,7 @@
   :root[data-theme="light"] .btn:hover { background: #eef2fb; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
   body {
     background: radial-gradient(1200px 620px at 15% -10%, #1a2438 0%, transparent 62%), var(--bg);
     color: var(--text);
@@ -91,6 +92,7 @@
     transition: border-color .18s, transform .18s;
   }
   .chip-link:hover { border-color: var(--accent); transform: translateY(-1px); }
+  button.chip-link { font-family: inherit; cursor: pointer; }
   .chip-link .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
 
   .hero { margin-bottom: 22px; }
@@ -165,6 +167,51 @@
   :root[data-theme="light"] .theme-sun { display: block; }
   :root[data-theme="light"] .theme-moon { display: none; }
 
+  /* 管理员设置 */
+  body.admin-lock { overflow: hidden; }
+  .admin-mask {
+    position: fixed; inset: 0; z-index: 80; padding: 18px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(5, 8, 14, .68); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  }
+  .admin-box {
+    width: 100%; max-width: 620px; max-height: 86vh; overflow: auto;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .75);
+  }
+  .admin-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+  .admin-title { font-size: 16px; font-weight: 650; }
+  .admin-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .admin-loginrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .admin-loginrow input {
+    flex: 1; min-width: 180px; background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px;
+    font: inherit; font-size: 13px; outline: none;
+  }
+  .admin-loginrow input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .admin-msg { font-size: 12px; color: var(--muted); margin-top: 9px; line-height: 1.65; }
+  .admin-msg.err { color: var(--err); }
+  .admin-msg.ok { color: var(--ok); }
+  .admin-list { display: flex; flex-direction: column; gap: 10px; }
+  .admin-site { border: 1px solid var(--border); border-radius: 12px; padding: 12px 13px; background: var(--surface-2); }
+  .admin-site-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .admin-site-name { font-size: 13.5px; font-weight: 620; }
+  .admin-site-url {
+    font-size: 11px; color: var(--muted); margin-top: 1px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all;
+  }
+  .admin-site textarea {
+    width: 100%; min-height: 64px; resize: vertical;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px;
+    font: inherit; font-size: 12.5px; line-height: 1.6; outline: none;
+  }
+  .admin-site textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .admin-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .admin-check input { accent-color: var(--err); }
+  .admin-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .admin-note { color: var(--muted); font-size: 11.5px; line-height: 1.7; margin-top: 10px; }
+
   @media (max-width: 720px) {
     .wrap { padding: 22px 14px 44px; }
     .sites { grid-template-columns: minmax(0, 1fr); }
@@ -186,6 +233,7 @@
       </div>
     </div>
     <div class="head-right">
+      <button class="chip-link" id="adminBtn" type="button">管理员设置</button>
       <a class="chip-link" href="https://polytrack114514.github.io/storage/status.html"><span class="dot"></span>站点状态</a>
       <button class="btn icon" id="themeBtn" type="button" title="切换主题" aria-label="切换主题">
         <svg class="theme-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -267,6 +315,36 @@
   </footer>
 </div>
 
+<div class="admin-mask" id="adminMask" hidden>
+  <div class="admin-box" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <div class="admin-head">
+      <div>
+        <div class="admin-title" id="adminTitle">管理员设置</div>
+        <div class="admin-sub" id="adminSub">管理各站点公告与访问状态</div>
+      </div>
+      <button class="btn icon" id="adminClose" type="button" title="关闭" aria-label="关闭">×</button>
+    </div>
+
+    <div id="adminLogin">
+      <div class="admin-loginrow">
+        <input type="password" id="adminPass" autocomplete="current-password" placeholder="管理员密码" />
+        <button class="btn" id="adminUnlock" type="button">解锁</button>
+      </div>
+      <div class="admin-msg" id="adminMsg"></div>
+    </div>
+
+    <div id="adminPanel" hidden>
+      <div class="admin-list" id="adminSites"></div>
+      <div class="admin-actions">
+        <button class="btn" id="adminSave" type="button">保存设置</button>
+        <button class="btn ghost" id="adminReload" type="button">重新读取</button>
+        <span class="admin-msg" id="adminSaveMsg"></span>
+      </div>
+      <div class="admin-note">公告会在对应网页加载时弹出，点击「我知道了」关闭；勾选「关闭访问」后，该网页只显示不可访问提示。</div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
@@ -288,6 +366,192 @@
     fetch(card.getAttribute('data-check'), { mode: 'no-cors', cache: 'no-store' })
       .then(function () { dot.className = 'sdot ok'; })
       .catch(function () { dot.className = 'sdot bad'; });
+  });
+
+  /* ---------- 管理员设置 ---------- */
+  var ADMIN_API = 'https://file-cloud-2.pages.dev';
+  var ADMIN_SITES = [
+    { key: 'storage', name: '云盘1', url: 'https://polytrack114514.github.io/storage/' },
+    { key: 'cloud2', name: '云盘2', url: 'https://polytrack114514.github.io/cloud2/' },
+    { key: 'img', name: '图床', url: 'https://polytrack114514.github.io/img/' },
+    { key: 'reader', name: '阅读器', url: 'https://polytrack114514.github.io/reader/' }
+  ];
+  var adminPass = '';
+  var adminMask = document.getElementById('adminMask');
+  var adminLogin = document.getElementById('adminLogin');
+  var adminPanel = document.getElementById('adminPanel');
+  var adminSitesBox = document.getElementById('adminSites');
+  var adminMsg = document.getElementById('adminMsg');
+  var adminSaveMsg = document.getElementById('adminSaveMsg');
+
+  function openAdmin() {
+    adminMask.hidden = false;
+    document.body.classList.add('admin-lock');
+    if (adminPass) {
+      showAdminPanel();
+      loadAdminConfig();
+      return;
+    }
+    adminLogin.hidden = false;
+    adminPanel.hidden = true;
+    adminMsg.textContent = '';
+    setTimeout(function () {
+      var p = document.getElementById('adminPass');
+      if (p) p.focus();
+    }, 30);
+  }
+
+  function closeAdmin() {
+    adminMask.hidden = true;
+    document.body.classList.remove('admin-lock');
+  }
+
+  function showAdminPanel() {
+    adminLogin.hidden = true;
+    adminPanel.hidden = false;
+    document.getElementById('adminSub').textContent = '已解锁，修改后点「保存设置」';
+  }
+
+  function unlockAdmin() {
+    var p = document.getElementById('adminPass').value.trim();
+    if (!p) {
+      adminMsg.textContent = '请输入管理员密码';
+      adminMsg.className = 'admin-msg err';
+      return;
+    }
+    var btn = document.getElementById('adminUnlock');
+    btn.disabled = true;
+    adminMsg.textContent = '验证中…';
+    adminMsg.className = 'admin-msg';
+    fetch(ADMIN_API + '/admin/verify', {
+      headers: { 'X-Admin-Password': p },
+      cache: 'no-store'
+    }).then(function (r) {
+      if (!r.ok) throw new Error(r.status === 403 ? '密码错误' : '验证失败 HTTP ' + r.status);
+      adminPass = p;
+      showAdminPanel();
+      loadAdminConfig();
+    }).catch(function (e) {
+      adminMsg.textContent = e.message;
+      adminMsg.className = 'admin-msg err';
+    }).then(function () {
+      btn.disabled = false;
+    });
+  }
+
+  function loadAdminConfig() {
+    adminSaveMsg.textContent = '正在读取…';
+    adminSaveMsg.className = 'admin-msg';
+    fetch(ADMIN_API + '/site-config?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('读取失败 HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (cfg) {
+        renderAdminSites(cfg);
+        adminSaveMsg.textContent = cfg.updated
+          ? '上次保存：' + new Date(cfg.updated).toLocaleString('zh-CN', { hour12: false })
+          : '还没有保存过设置';
+        adminSaveMsg.className = 'admin-msg';
+      })
+      .catch(function (e) {
+        adminSaveMsg.textContent = e.message;
+        adminSaveMsg.className = 'admin-msg err';
+      });
+  }
+
+  function renderAdminSites(cfg) {
+    adminSitesBox.replaceChildren();
+    ADMIN_SITES.forEach(function (site) {
+      var info = (cfg && cfg.sites && cfg.sites[site.key]) || {};
+      var row = document.createElement('div');
+      row.className = 'admin-site';
+      row.setAttribute('data-key', site.key);
+
+      var head = document.createElement('div');
+      head.className = 'admin-site-head';
+      var left = document.createElement('div');
+      var name = document.createElement('div');
+      name.className = 'admin-site-name';
+      name.textContent = site.name;
+      var url = document.createElement('div');
+      url.className = 'admin-site-url';
+      url.textContent = site.url;
+      left.appendChild(name);
+      left.appendChild(url);
+
+      var lab = document.createElement('label');
+      lab.className = 'admin-check';
+      var chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.setAttribute('data-closed', '');
+      chk.checked = !!info.closed;
+      lab.appendChild(chk);
+      lab.appendChild(document.createTextNode('关闭访问'));
+
+      head.appendChild(left);
+      head.appendChild(lab);
+
+      var ta = document.createElement('textarea');
+      ta.setAttribute('data-ann', '');
+      ta.maxLength = 500;
+      ta.placeholder = '公告内容，留空表示不显示';
+      ta.value = info.announcement || '';
+
+      row.appendChild(head);
+      row.appendChild(ta);
+      adminSitesBox.appendChild(row);
+    });
+  }
+
+  function saveAdminConfig() {
+    var sites = {};
+    adminSitesBox.querySelectorAll('.admin-site').forEach(function (row) {
+      sites[row.getAttribute('data-key')] = {
+        announcement: row.querySelector('[data-ann]').value,
+        closed: row.querySelector('[data-closed]').checked
+      };
+    });
+    var btn = document.getElementById('adminSave');
+    btn.disabled = true;
+    adminSaveMsg.textContent = '正在保存…';
+    adminSaveMsg.className = 'admin-msg';
+    fetch(ADMIN_API + '/site-config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Password': adminPass
+      },
+      body: JSON.stringify({ sites: sites })
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+        return j;
+      });
+    }).then(function () {
+      adminSaveMsg.textContent = '已保存，对应网页刷新后生效';
+      adminSaveMsg.className = 'admin-msg ok';
+    }).catch(function (e) {
+      adminSaveMsg.textContent = '保存失败：' + e.message;
+      adminSaveMsg.className = 'admin-msg err';
+    }).then(function () {
+      btn.disabled = false;
+    });
+  }
+
+  document.getElementById('adminBtn').addEventListener('click', openAdmin);
+  document.getElementById('adminClose').addEventListener('click', closeAdmin);
+  document.getElementById('adminUnlock').addEventListener('click', unlockAdmin);
+  document.getElementById('adminPass').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') unlockAdmin();
+  });
+  document.getElementById('adminSave').addEventListener('click', saveAdminConfig);
+  document.getElementById('adminReload').addEventListener('click', loadAdminConfig);
+  adminMask.addEventListener('click', function (e) {
+    if (e.target === adminMask) closeAdmin();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !adminMask.hidden) closeAdmin();
   });
 })();
 </script>
